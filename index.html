@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Game on WASM</title>
+  </head>
+  <body style="text-align: center">
+    <canvas id="canvas" width="600" height="600"></canvas>
+  </body>
+  <script>
+    (async () => {
+      let canvas = document.getElementById('canvas');
+      let ctx = canvas.getContext("2d");
+
+      const {instance} = await WebAssembly.instantiateStreaming(fetch('app.wasm'), {
+        env: {
+          print: function(m) {
+            console.log(m);
+          },
+          jsSetInterval: function (f, n) {
+            return setInterval(function () {
+              instance.exports.runCallback(f);
+            }, n);
+          },
+          jsClearInterval: function (index) {
+            clearInterval(index);
+          },
+          jsFillRect: function (x, y, w, h, color) {
+            ctx.fillStyle = '#' + color.toString(16).padStart(6, 0);
+            ctx.fillRect(x, y, w, h);
+          },
+          jsClearRect: function (x, y, w, h) {
+            ctx.clearRect(x, y, w, h);
+          },
+          alert: function (code) {
+            switch (code) {
+              case 1: alert('Game over'); break;
+
+            }
+          },
+          random(min, max) {
+            return Math.floor(min + Math.random() * (max + 1 - min));
+          }
+        }
+      });
+      instance.exports.main();
+
+      canvas.addEventListener('mouseup', function (event) {
+        let mouseX = event.pageX - canvas.offsetLeft;
+        let mouseY = event.pageY - canvas.offsetTop;
+        instance.exports.handleClick(mouseX, mouseY)
+      });
+
+      document.addEventListener('keyup', function (event) {
+        switch (event.key) {
+          case "ArrowRight":
+            instance.exports.handleKeyPress(0);
+            break;
+
+          case "ArrowDown":
+            instance.exports.handleKeyPress(1);
+            break;
+
+          case "ArrowLeft":
+            instance.exports.handleKeyPress(2);
+            break;
+
+          case "ArrowUp":
+            instance.exports.handleKeyPress(3);
+            break;
+        }
+      })
+
+    })();
+  </script>
+</html>
+
+
