@@ -237,7 +237,7 @@ int main() {
   snake_growth();
 
   draw();
-  mainInterval = jsSetInterval(move_snake, 250);
+  mainInterval = jsSetInterval(move_snake, 200);
 
   return 0;
 }
