@@ -195,6 +195,7 @@ void move_snake() {
     if (border_touched) {
         alert(1);
         jsClearInterval(mainInterval);
+        return;
     }
 
     for (int i = 0; i < food_count; i++) {
