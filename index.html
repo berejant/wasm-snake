@@ -18,38 +18,48 @@
     (async () => {
       let canvas = document.getElementById('canvas');
       let ctx = canvas.getContext("2d");
+      let env = {
+        print: function(m) {
+          console.log(m);
+        },
+        jsSetInterval: function (f, n) {
+          return setInterval(function () {
+            instance.exports.runCallback(f);
+          }, n);
+        },
+        jsClearInterval: function (index) {
+          clearInterval(index);
+        },
+        jsFillRect: function (x, y, w, h, color) {
+          ctx.fillStyle = '#' + color.toString(16).padStart(6, 0);
+          ctx.fillRect(x, y, w, h);
+        },
+        jsClearRect: function (x, y, w, h) {
+          ctx.clearRect(x, y, w, h);
+        },
+        alert: function (code) {
+          switch (code) {
+            case 1: alert('Game over'); break;
 
-      const {instance} = await WebAssembly.instantiateStreaming(fetch('app.wasm'), {
-        env: {
-          print: function(m) {
-            console.log(m);
-          },
-          jsSetInterval: function (f, n) {
-            return setInterval(function () {
-              instance.exports.runCallback(f);
-            }, n);
-          },
-          jsClearInterval: function (index) {
-            clearInterval(index);
-          },
-          jsFillRect: function (x, y, w, h, color) {
-            ctx.fillStyle = '#' + color.toString(16).padStart(6, 0);
-            ctx.fillRect(x, y, w, h);
-          },
-          jsClearRect: function (x, y, w, h) {
-            ctx.clearRect(x, y, w, h);
-          },
-          alert: function (code) {
-            switch (code) {
-              case 1: alert('Game over'); break;
-
-            }
-          },
-          random(min, max) {
-            return Math.floor(min + Math.random() * (max + 1 - min));
           }
+        },
+        random(min, max) {
+          return Math.floor(min + Math.random() * (max + 1 - min));
         }
-      });
+      };
+
+      let wasm = fetch('app.wasm');
+      let result;
+      if (WebAssembly.instantiateStreaming) {
+        result = await WebAssembly.instantiateStreaming(wasm, {env: env});
+      } else {
+        let response = await wasm;
+        let buffer = await response.arrayBuffer();
+        result = await WebAssembly.instantiate(buffer, {env: env});
+      }
+
+      const instance = result.instance
+
       instance.exports.main();
 
       canvas.addEventListener('mouseup', function (event) {
